@@ -10,7 +10,3 @@ repos:
     - id: check-json
     - id: check-merge-conflict
     - id: check-toml
-      # -   repo: https://github.com/getasnap/snap-pre-commit-hooks
-      # rev: v1.1
-      # hooks:
-      # - id: prepend-branch-name
