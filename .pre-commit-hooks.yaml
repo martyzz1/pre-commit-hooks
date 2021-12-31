@@ -1,0 +1,41 @@
+-   id: prepend-branch-name
+    name: prepend each commit message with the branch name
+    description: Ensures that all commits on a feature branch can be traced, useful if using rebase merge strategy
+    entry: prepend-branch-name/prepend-branch-name.sh
+    language: script
+    stages: [commit-msg]
+-   id: yarn-system-husky
+    name: Invoke husky
+    description: Wrapper around the call to husky to allow husky pre-commit hooks to be run
+    entry: yarn-system-husky/yarn-system-husky.sh
+    language: script
+    verbose: true
+    require_serial: true
+    stages: [commit, prepare-commit-msg, commit-msg, push, merge-commit]
+-   id: check-django-migrations
+    name: Check django migrations
+    entry: check-django-migrations/check-django-migrations.sh
+    language: script
+    files: .+\/models.*\.py$
+    stages: [commit]
+    require_serial: true
+-   id: check-django-missing-migrations
+    name: Check For uncommitted django migrations files
+    entry: check-django-missing-migrations/check-django-missing-migrations.sh
+    language: script
+    stages: [commit]
+    require_serial: true
+-   id: check-openapi3-lint
+    name: Check For openapi3 linting errors
+    entry: ./check-openapi3-lint/check-openapi3-lint.sh
+    language: script
+    stages: [commit]
+    require_serial: true
+    files: .+-api.yaml$
+-   id: check-openapi-version-control
+    name: Ensure openapi version number has been incremented alongside edits
+    entry: ./check-openapi-version-control/check-openapi-version-control.sh
+    language: script
+    stages: [commit]
+    require_serial: true
+    files: .+-api.yaml$
