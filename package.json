@@ -1,0 +1,9 @@
+{
+    "name": "placeholder_package",
+    "description": "run the redocly openapi-cli",
+    "version": "0.0.1",
+    "dependencies": {
+        "@redocly/openapi-cli": "^1.0.0-beta.79"
+    },
+    "bin": "./node_modules/.bin/openapi"
+}
