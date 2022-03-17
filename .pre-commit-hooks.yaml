@@ -46,3 +46,9 @@
     require_serial: false
     additional_dependencies: ["@redocly/openapi-cli@1.0.0-beta.79"]
     minimum_pre_commit_version: '0'
+- id: circleci-config-validate
+  name: CircleCI config validation
+  description: Test if the CircleCI config is well formed.
+  entry: circleci-validate/circleci-config-validate.sh
+  language: script
+  files: ^.circleci/config.yml$
