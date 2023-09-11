@@ -59,4 +59,6 @@
   language: script
 - id: replace-string-in-json-file
   name: Replaces a string in a json file
+  entry: replace-string-in-json-file/replace-string-in-json-file.sh
   args: ['fromString', 'toString']  # if you want to override default arguments
+  language: script
