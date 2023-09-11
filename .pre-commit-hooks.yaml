@@ -61,5 +61,5 @@
   name: Replaces a string in a json file
   description: Used to replace fixed strings in json files using jq
   entry: replace-string-in-json-file/replace-string-in-json-file.sh
-  args: ['fromString', 'toString']  # if you want to override default arguments
+  # args: ['fromString', 'toString']  # if you want to override default arguments
   language: script
