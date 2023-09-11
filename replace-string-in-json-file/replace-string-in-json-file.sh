@@ -1,9 +1,9 @@
 #!/bin/bash
 
 # Path to the package-lock.json
-FILE_PATH="$1"
-FROM_STRING=$(echo "$2" | sed -e 's/\./\\./g' -e 's/\:/\\:/g')
-TO_STRING="$3"
+FROM_STRING=$(echo "$1" | sed -e 's/\./\\./g' -e 's/\:/\\:/g')
+TO_STRING="$2"
+FILE_PATH="$3"
 
 printf "FILE_PATH=%s" "$FILE_PATH"
 printf "FROM_STRING=%s" "$FROM_STRING"
