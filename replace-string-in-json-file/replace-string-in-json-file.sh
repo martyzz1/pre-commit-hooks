@@ -9,7 +9,7 @@ FILE_PATH="$3"
 jq --arg from "$FROM_STRING" --arg to "$TO_STRING" 'walk(if type == "string" then gsub($from; $to) else . end)' "$FILE_PATH" > "${FILE_PATH}.tmp"
 
 # Print the changed lines
-diff --unchanged-line-format="" --old-line-format="FIXED: %l\n" --new-line-format="" "$FILE_PATH" "${FILE_PATH}.tmp" | tee changes.txt
+diff --unchanged-line-format="" --old-line-format="FIXED: %l"$'\n' --new-line-format="" "$FILE_PATH" "${FILE_PATH}.tmp" | tee changes.txt
 
 # Print the summary of changed lines
 echo "$(wc -l < changes.txt) lines changed"
