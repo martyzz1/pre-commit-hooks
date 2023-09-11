@@ -57,3 +57,6 @@
   description: Test if the CircleCI orb is well formed.
   entry: circleci-orb-pack-validation/circleci-orb-pack-validation.sh
   language: script
+- id: replace-string-in-json-file
+  name: Replaces a string in a json file
+  args: ['fromString', 'toString']  # if you want to override default arguments
