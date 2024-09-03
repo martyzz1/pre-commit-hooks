@@ -12,11 +12,12 @@ BRANCH_NAME="${BRANCH_NAME#*/}"
 BRANCH_EXCLUDED=$(printf "%s\n" "${BRANCHES_TO_SKIP[@]}" | grep -c "^$BRANCH_NAME$")
 BRANCH_IN_COMMIT=$(grep -c "\[$BRANCH_NAME\]" "$1")
 
-TEXT=$(cat "$1" | sed '/^#.*/d')
+TEXT=$(sed '/^#.*/d' "$1")
+
 if [ -n "$TEXT" ]
 then
     if [ -n "$BRANCH_NAME" ] && ! [[ $BRANCH_EXCLUDED -eq 1 ]] && ! [[ $BRANCH_IN_COMMIT -ge 1 ]]; then
-    sed -i.bak -e "1s/^/[$BRANCH_NAME] /" "$1"
+    sed -i.bak -e "1s|^|[$BRANCH_NAME] |" "$1"
     fi
 else
     echo "Aborting commit due to empty commit message."
