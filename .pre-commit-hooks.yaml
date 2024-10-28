@@ -1,64 +1,68 @@
--   id: prepend-branch-name
-    name: prepend each commit message with the branch name
-    description: Ensures that all commits on a feature branch can be traced, useful if using rebase merge strategy
-    entry: prepend-branch-name/prepend-branch-name.sh
-    language: script
-    stages: [commit-msg]
--   id: yarn-system-husky
-    name: Invoke husky
-    description: Wrapper around the call to husky to allow husky pre-commit hooks to be run
-    entry: yarn-system-husky/yarn-system-husky.sh
-    language: script
-    verbose: true
-    require_serial: true
-    stages: [commit, prepare-commit-msg, commit-msg, push, merge-commit]
--   id: check-django-migrations
-    name: Check django migrations
-    entry: check-django-migrations/check-django-migrations.sh
-    language: script
-    files: .+\/models.*\.py$
-    stages: [commit]
-    require_serial: true
--   id: check-django-missing-migrations
-    name: Check For uncommitted django migrations files
-    entry: check-django-missing-migrations/check-django-missing-migrations.sh
-    language: script
-    stages: [commit]
-    require_serial: true
--   id: check-openapi3-lint
-    name: Check For openapi3 linting errors
-    entry: ./check-openapi3-lint/check-openapi3-lint.sh
-    language: script
-    stages: [commit]
-    require_serial: true
-    files: .+-api.yaml$
--   id: check-openapi-version-control
-    name: Ensure openapi version number has been incremented alongside edits
-    entry: ./check-openapi-version-control/check-openapi-version-control.sh
-    language: script
-    stages: [commit]
-    require_serial: true
-    files: .+-api.yaml$
--   id: redocly-openapi-cli
-    name: redocly-openapi-cli
-    entry: openapi
-    language: node
-    require_serial: false
-    additional_dependencies: ["@redocly/openapi-cli@1.0.0-beta.79"]
-    minimum_pre_commit_version: '0'
+- id: prepend-branch-name
+  name: prepend each commit message with the branch name
+  description: Ensures that all commits on a feature branch can be traced, useful if using rebase merge strategy
+  entry: prepend-branch-name/prepend-branch-name.sh
+  language: script
+  stages: [commit-msg]
+- id: yarn-system-husky
+  name: Invoke husky
+  description: Wrapper around the call to husky to allow husky pre-commit hooks to be run
+  entry: yarn-system-husky/yarn-system-husky.sh
+  language: script
+  verbose: true
+  require_serial: true
+  stages: [pre-commit, prepare-commit-msg, commit-msg, pre-push, pre-merge-commit]
+- id: check-django-migrations
+  name: Check django migrations
+  entry: check-django-migrations/check-django-migrations.sh
+  language: script
+  files: .+\/models.*\.py$
+  stages: [pre-commit]
+  require_serial: true
+- id: check-django-missing-migrations
+  name: Check For uncommitted django migrations files
+  entry: check-django-missing-migrations/check-django-missing-migrations.sh
+  language: script
+  stages: [pre-commit]
+  require_serial: true
+- id: check-openapi3-lint
+  name: Check For openapi3 linting errors
+  entry: ./check-openapi3-lint/check-openapi3-lint.sh
+  language: script
+  stages: [pre-commit]
+  require_serial: true
+  files: .+-api.yaml$
+- id: check-openapi-version-control
+  name: Ensure openapi version number has been incremented alongside edits
+  entry: ./check-openapi-version-control/check-openapi-version-control.sh
+  language: script
+  stages: [pre-commit]
+  require_serial: true
+  files: .+-api.yaml$
+- id: redocly-openapi-cli
+  name: redocly-openapi-cli
+  entry: openapi
+  language: node
+  stages: [pre-commit]
+  require_serial: false
+  additional_dependencies: ["@redocly/openapi-cli@1.0.0-beta.79"]
+  minimum_pre_commit_version: '0'
 - id: circleci-config-validate
   name: CircleCI config validation
   description: Test if the CircleCI config is well formed.
+  stages: [pre-commit]
   entry: circleci-validate/circleci-config-validate.sh
   language: script
   files: ^.circleci/config.yml$
 - id: circleci-orb-pack-validation
   name: CircleCI Orb construction validation
   description: Test if the CircleCI orb is well formed.
+  stages: [pre-commit]
   entry: circleci-orb-pack-validation/circleci-orb-pack-validation.sh
   language: script
 - id: replace-string-in-json-file
   name: Replaces a string in a json file
+  stages: [pre-commit]
   description: Used to replace fixed strings in json files using jq
   entry: replace-string-in-json-file/replace-string-in-json-file.sh
   # args: ['fromString', 'toString']  # if you want to override default arguments
