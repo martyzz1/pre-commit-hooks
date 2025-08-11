@@ -125,12 +125,19 @@ repos:
         ]
 ```
 
-### 2. Run manually (for testing)
+### 2. Generate initial ghost files (required after first install)
+
+After installation, you need to generate ghost files for all existing versioned files:
 
 ```bash
-# Arguments are required: ghost suffix and colon-separated directories
+# Generate ghost files for all existing files (required after first install)
+pre-commit run generate-ghost-files --all-files
+
+# Or test manually first
 ./generate-ghost-files/generate-ghost-files.sh .ghost "src/libs/schemas:src/workers"
 ```
+
+**Important**: The `--all-files` flag is required on first install to create ghost files for all existing versioned files. Without this, the hook won't have any ghost files to compare against on future commits.
 
 ### 3. With custom configuration
 
