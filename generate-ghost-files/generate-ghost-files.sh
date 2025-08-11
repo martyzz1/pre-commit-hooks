@@ -76,6 +76,7 @@ generate_ghost_for_dir() {
     log_info "Processing $file_type directory: $dir"
     
     # Find all subdirectories that contain versioned files
+    log_info "Searching for subdirectories in: $dir"
     find "$dir" -type d | while read -r subdir; do
         # Skip the root directory itself
         if [ "$subdir" = "$dir" ]; then
