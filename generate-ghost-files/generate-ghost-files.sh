@@ -78,7 +78,8 @@ process_directory_for_ghosts() {
     local subdirs=$(find "$dir" -type d)
     log_info "Found subdirectories: $subdirs"
     
-    echo "$subdirs" | while read -r subdir; do
+    # Use process substitution to avoid subshell issues
+    while IFS= read -r subdir; do
         # Skip the root directory itself
         if [ "$subdir" = "$dir" ]; then
             log_info "Skipping root directory: $subdir"
@@ -141,10 +142,11 @@ process_directory_for_ghosts() {
                     
                     # Add to the global collection instead of failing immediately
                     UPDATED_GHOSTS+=("$ghost_file")
+                    log_info "Added to UPDATED_GHOSTS array. Current count: ${#UPDATED_GHOSTS[@]}"
                 fi
             fi
         fi
-    done
+    done < <(echo "$subdirs")
 }
 
 # Function to check if staged versioned files have ghost files
@@ -231,6 +233,8 @@ main() {
             process_directory_for_ghosts "$dir" "versioned files"
         fi
     done
+    
+    log_info "Finished processing all directories. UPDATED_GHOSTS array contains ${#UPDATED_GHOSTS[@]} items: ${UPDATED_GHOSTS[*]}"
     
     # Now check if staged versioned files have ghost files
     check_staged_versioned_files
