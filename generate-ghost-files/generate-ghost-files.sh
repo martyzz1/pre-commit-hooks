@@ -64,20 +64,15 @@ extract_version() {
     echo "$version_part"
 }
 
-# Function to generate ghost file for a directory
-generate_ghost_for_dir() {
+# Function to process a directory for ghost files
+process_directory_for_ghosts() {
     local dir="$1"
-    local file_type="$2"
+    local description="$2"
+    local -n updated_ghosts_ref="$3"  # Reference to the array to collect results
     
-    if [ ! -d "$dir" ]; then
-        log_warn "Directory $dir does not exist, skipping"
-        return 0
-    fi
+    log_info "Processing $description directory: $dir"
     
-    log_info "Processing $file_type directory: $dir"
-    
-    # Find all subdirectories that contain versioned files
-    log_info "Searching for subdirectories in: $dir"
+    # Find all subdirectories in this directory
     local subdirs=$(find "$dir" -type d)
     log_info "Found subdirectories: $subdirs"
     
@@ -142,11 +137,8 @@ generate_ghost_for_dir() {
                     
                     log_info "Ghost file created/updated: $ghost_file"
                     
-                    # Always fail if we created/updated a ghost file - user needs to add it
-                    log_error "Ghost file '$ghost_file' was created/updated and needs to be added to your commit."
-                    log_error "Please run: git add $ghost_file"
-                    log_error "Then commit again."
-                    exit 1
+                    # Add to the collection instead of failing immediately
+                    updated_ghosts_ref+=("$ghost_file")
                 fi
             fi
         fi
@@ -230,15 +222,31 @@ main() {
         exit 1
     fi
     
+    # Array to collect all created/updated ghost files
+    local updated_ghosts=()
+    
     # Process all directories to generate/update ghost files
     for dir in "${DIRS[@]}"; do
         if [ -n "$dir" ]; then
-            generate_ghost_for_dir "$dir" "versioned files"
+            # Pass the updated_ghosts array to collect results
+            process_directory_for_ghosts "$dir" "versioned files" updated_ghosts
         fi
     done
     
     # Now check if staged versioned files have ghost files
     check_staged_versioned_files
+    
+    # If any ghost files were created/updated, fail with comprehensive message
+    if [ ${#updated_ghosts[@]} -gt 0 ]; then
+        log_error "The following ghost files were created/updated and need to be added to your commit:"
+        for ghost in "${updated_ghosts[@]}"; do
+            log_error "  $ghost"
+        done
+        log_error ""
+        log_error "Please run: git add ${updated_ghosts[*]}"
+        log_error "Then commit again."
+        exit 1
+    fi
     
     log_info "Ghost file generation completed successfully"
 }
