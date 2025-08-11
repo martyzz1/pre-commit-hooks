@@ -100,7 +100,8 @@ generate_ghost_for_dir() {
             local first_file=$(echo "$base_files" | head -n 1)
             local filename=$(basename "$first_file")
             local extension="${filename##*.}"
-            local base_name=$(echo "$filename" | sed 's/-[0-9]\+\.[0-9]\+\.[0-9]\+//' | sed 's/-[0-9]\+\.[0-9]\+//')
+            # Extract base name by removing version pattern and extension
+            local base_name=$(echo "$filename" | sed -E 's/-[0-9]+\.[0-9]+(\.[0-9]+)?\.[a-zA-Z]+$//')
             log_info "Extracted base name: $base_name, extension: $extension"
             
             # Find the latest version
