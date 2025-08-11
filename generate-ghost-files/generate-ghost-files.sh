@@ -21,7 +21,7 @@ GHOST_SUFFIX="$1"
 DIRS_STRING="$2"
 
 # Split the directories string by colons
-IFS=':' read -ra DIRS <<< "$DIRS_STRING"
+IFS=':' DIRS=($DIRS_STRING)
 
 # Colors for output
 RED='\033[0;31m'
