@@ -90,7 +90,9 @@ generate_ghost_for_dir() {
         log_info "Processing subdirectory: $subdir"
         
         # Look for files with version patterns in this subdirectory
+        log_info "Looking for versioned files in: $subdir"
         local base_files=$(find "$subdir" -maxdepth 1 -type f -name "*-*.json" -o -name "*-*.ts" | head -1)
+        log_info "Found base files: $base_files"
         
         if [ -n "$base_files" ]; then
             # Get the base name without version and extension
