@@ -1,0 +1,59 @@
+# Example pre-commit configuration for the generate-ghost-files hook
+# Copy this to your project's .pre-commit-config.yaml and customize as needed
+
+repos:
+  # Local hooks (hooks in this repository)
+  - repo: local
+    hooks:
+      - id: generate-ghost-files
+        name: Generate Ghost Files
+        description: Generate ghost files for versioned files to show diffs in PRs
+        entry: generate-ghost-files/generate-ghost-files.sh
+        language: system
+        stages: [pre-commit]
+        args: [
+          ".ghost",            # Ghost file suffix (first argument)
+          "src/libs/schemas",  # First directory to scan
+          "src/workers"        # Second directory to scan
+        ]
+        
+  # Example: Add other pre-commit hooks you might want
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.4.0
+    hooks:
+      - id: trailing-whitespace
+      - id: end-of-file-fixer
+      - id: check-yaml
+      - id: check-added-large-files
+      
+  # Example: Add language-specific hooks
+  - repo: https://github.com/psf/black
+    rev: 23.3.0
+    hooks:
+      - id: black
+        language_version: python3
+        
+  - repo: https://github.com/pre-commit/mirrors-eslint
+    rev: v8.38.0
+    hooks:
+      - id: eslint
+        files: \.(js|ts)$
+        types: [file]
+
+# Optional: Global configuration
+default_language_version:
+  python: python3.9
+  node: 18.0.0
+
+# Optional: Exclude patterns
+exclude: |
+  (?x)^(
+      \.git/|
+      \.venv/|
+      node_modules/|
+      \.pytest_cache/|
+      \.mypy_cache/|
+      dist/|
+      build/
+  )$
+

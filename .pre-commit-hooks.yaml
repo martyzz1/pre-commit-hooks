@@ -67,3 +67,10 @@
   entry: replace-string-in-json-file/replace-string-in-json-file.sh
   # args: ['fromString', 'toString']  # if you want to override default arguments
   language: script
+- id: generate-ghost-files
+  name: Generate Ghost Files
+  description: Generate ghost files for versioned files to show diffs in PRs
+  entry: generate-ghost-files/generate-ghost-files.sh
+  language: script
+  stages: [pre-commit]
+  # args: ['.ghost', 'src/libs/schemas', 'src/workers']
