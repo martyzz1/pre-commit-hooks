@@ -139,34 +139,89 @@ generate_ghost_for_dir() {
                     # Copy the latest version to the ghost file
                     cp "$latest_file" "$ghost_file"
                     
-                    # Add the ghost file to git staging if it's not already staged
-                    if ! git diff --cached --name-only | grep -q "^$(git rev-parse --show-prefix)$ghost_file$"; then
-                        git add "$ghost_file"
-                        log_info "Added ghost file to git staging: $ghost_file"
-                    else
-                        log_info "Ghost file already staged: $ghost_file"
-                    fi
+                    log_info "Ghost file created/updated: $ghost_file"
+                    
+                    # Always fail if we created/updated a ghost file - user needs to add it
+                    log_error "Ghost file '$ghost_file' was created/updated and needs to be added to your commit."
+                    log_error "Please run: git add $ghost_file"
+                    log_error "Then commit again."
+                    exit 1
                 fi
             fi
         fi
     done
 }
 
+# Function to check if staged versioned files have ghost files
+check_staged_versioned_files() {
+    local missing_ghosts=()
+    
+    # Get all staged files
+    local staged_files=$(git diff --cached --name-only)
+    
+    for staged_file in $staged_files; do
+        # Check if this is a versioned file
+        if [[ "$staged_file" =~ -[0-9]+\.[0-9]+(\.[0-9]+)?\.[a-zA-Z]+$ ]]; then
+            # Extract base name and extension
+            local base_name=$(echo "$staged_file" | sed -E 's/-[0-9]+\.[0-9]+(\.[0-9]+)?\.[a-zA-Z]+$//')
+            local extension=$(echo "$staged_file" | sed -E 's/.*\.([a-zA-Z]+)$/\1/')
+            local dir=$(dirname "$staged_file")
+            local ghost_file="${dir}/${base_name}.${extension}${GHOST_SUFFIX}"
+            
+            # Check if ghost file exists and is up to date
+            if [ ! -f "$ghost_file" ]; then
+                missing_ghosts+=("$ghost_file")
+            else
+                # Check if ghost file is out of sync with the staged version
+                local staged_content=$(git show ":$staged_file")
+                if ! echo "$staged_content" | cmp -s "$ghost_file" -; then
+                    missing_ghosts+=("$ghost_file (out of sync)")
+                fi
+            fi
+        fi
+    done
+    
+    # If any ghost files are missing or out of sync, fail with helpful message
+    if [ ${#missing_ghosts[@]} -gt 0 ]; then
+        log_error "Error: The following ghost files are missing or out of sync for staged versioned files:"
+        for ghost in "${missing_ghosts[@]}"; do
+            log_error "  $ghost"
+        done
+        log_error ""
+        log_error "Please run: git add ${missing_ghosts[*]% (*}"
+        log_error "Then commit again."
+        exit 1
+    fi
+}
+
 # Main execution
 main() {
     log_info "Starting ghost file generation for versioned files"
-    log_info "Received directories string: '$DIRS_STRING'"
-    log_info "Parsed directories array: ${DIRS[*]}"
-    log_info "Number of directories: ${#DIRS[@]}"
-    log_info "Directories to scan: ${DIRS[*]}"
-    log_info "Ghost suffix: $GHOST_SUFFIX"
     
-    # Process all directories
+    # Parse arguments
+    if [ $# -lt 2 ]; then
+        log_error "Usage: $0 <ghost_suffix> <directory1> [directory2] [directory3] ..."
+        log_error "Example: $0 .ghost src/libs/schemas src/workers"
+        exit 1
+    fi
+    
+    # First argument is the ghost suffix, remaining are directories
+    GHOST_SUFFIX="$1"
+    shift  # Remove the first argument (ghost suffix)
+    DIRS=("$@")
+    
+    log_info "Ghost suffix: $GHOST_SUFFIX"
+    log_info "Directories to scan: ${DIRS[*]}"
+    
+    # Process all directories to generate/update ghost files
     for dir in "${DIRS[@]}"; do
         if [ -n "$dir" ]; then
             generate_ghost_for_dir "$dir" "versioned files"
         fi
     done
+    
+    # Now check if staged versioned files have ghost files
+    check_staged_versioned_files
     
     log_info "Ghost file generation completed successfully"
 }

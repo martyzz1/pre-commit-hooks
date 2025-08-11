@@ -12,140 +12,66 @@ Git pull requests often don't show diffs compared to previous versions because t
 
 ## How It Works
 
-1. **Scans configured directories** for versioned files
-2. **Identifies the latest version** of each file using semantic versioning
-3. **Generates/updates ghost files** by copying the latest version
-4. **Automatically stages** the ghost files in git
+The hook scans the specified directories for versioned files and generates "ghost" files that always contain the latest version. This ensures that when you create a new version of a file, the ghost file will show a diff in pull requests.
 
-## Configuration
+**Important**: The hook creates/updates ghost files but does NOT stage them automatically. You need to manually add them to your commit after the hook runs.
 
-The hook is configured via arguments in the `.pre-commit-config.yaml` file:
+**Validation**: The hook will fail if you try to commit a versioned file without a corresponding ghost file, ensuring consistency.
 
-### Configuration Arguments
+## Configuration Arguments
 
-The hook accepts exactly two arguments:
-1. **Ghost suffix**: Suffix for ghost files (required)
-2. **Directories to scan**: Colon-separated list of directories containing versioned files (required)
+The hook accepts the following arguments in your `.pre-commit-config.yaml`:
 
-### Example Configuration
-
-```yaml
-# .pre-commit-config.yaml
-repos:
-  - repo: local
-    hooks:
-      - id: generate-ghost-files
-        name: Generate Ghost Files
-        entry: generate-ghost-files/generate-ghost-files.sh
-        language: system
-        stages: [pre-commit]
-        args: [
-          ".ghost",            # Ghost file suffix (required)
-          "src/libs/schemas",  # First directory to scan (required)
-          "src/workers"        # Additional directory to scan (optional)
-        ]
-```
-
-**Note**: Both the ghost suffix and at least one directory are required arguments.
-```
-
-### Multiple Directories
-
-Use colon-separated paths in a single argument:
-
-```yaml
-args: [
-  ".latest",                                    # Ghost file suffix
-  "src/libs/schemas:src/libs/models:src/workers"  # Colon-separated directories
-]
-```
-
-## File Naming Convention
-
-The hook expects versioned files to follow this pattern:
-- Base name + version + extension
-- Examples:
-  - `order-status-event-1.0.0.json`
-  - `order-status-event-1.0.1.json`
-  - `order-status-event-2.0.0.ts`
-
-## Generated Ghost Files
-
-For each versioned file, a ghost file is created:
-- **Input**: `order-status-event-1.0.1.json`
-- **Ghost**: `order-status-event.json.ghost`
-
-The ghost file always contains the latest version and gets updated on each commit.
+- **First argument**: Ghost file suffix (e.g., `.ghost`)
+- **Remaining arguments**: Directories to scan for versioned files
 
 ## Usage
 
-### 1. Install the hook
+### After Installation
 
-**For local installation (recommended):**
-```bash
-# Copy the generate-ghost-files directory to your project
-cp -r /path/to/pre-commit-hooks/generate-ghost-files ./
-```
-
-**For repository-based installation:**
-The hook will be automatically downloaded when you run `pre-commit install`.
-
-### 2. Add to pre-commit configuration
-
-**Option A: Local hook (recommended)**
-```yaml
-# .pre-commit-config.yaml
-repos:
-  - repo: local
-    hooks:
-      - id: generate-ghost-files
-        name: Generate Ghost Files
-        entry: generate-ghost-files/generate-ghost-files.sh
-        language: system
-        stages: [pre-commit]
-        args: [
-          ".ghost",            # Ghost file suffix (required)
-          "src/libs/schemas",  # First directory to scan (required)
-          "src/workers"        # Additional directory to scan (optional)
-        ]
-```
-
-**Option B: From this repository**
-```yaml
-# .pre-commit-config.yaml
-repos:
-  - repo: https://github.com/your-username/pre-commit-hooks
-    rev: v1.0.0  # Use the latest release
-    hooks:
-      - id: generate-ghost-files
-        args: [
-          ".ghost",            # Ghost file suffix (required)
-          "src/libs/schemas",  # First directory to scan (required)
-          "src/workers"        # Additional directory to scan (optional)
-        ]
-```
-
-### 2. Generate initial ghost files (required after first install)
-
-After installation, you need to generate ghost files for all existing versioned files:
+After installing the hook, you must run it once to generate ghost files for all existing versioned files:
 
 ```bash
-# Generate ghost files for all existing files (required after first install)
 pre-commit run generate-ghost-files --all-files
-
-# Or test manually first
-./generate-ghost-files/generate-ghost-files.sh .ghost "src/libs/schemas:src/workers"
 ```
 
-**Important**: The `--all-files` flag is required on first install to create ghost files for all existing versioned files. Without this, the hook won't have any ghost files to compare against on future commits.
-
-### 3. With custom configuration
+**Then manually add the generated ghost files to your commit:**
 
 ```bash
-# Pass arguments directly to the script
-# First argument: ghost file suffix, second: colon-separated directories
-./generate-ghost-files/generate-ghost-files.sh ".latest" "src/schemas:src/models:src/workers"
+git add **/*.ghost
+git commit -m "Add ghost files for versioned schemas and workers"
 ```
+
+### Normal Operation
+
+On subsequent commits, the hook will:
+- **Create/Update**: Generate or update ghost files when versioned files change
+- **Fail**: Always fail when ghost files are created/updated (requiring user action)
+- **Validate**: Check that staged versioned files have up-to-date ghost files
+- **Enforce**: Block commits until ghost files are properly staged
+
+### Workflow
+
+1. **Stage versioned file**: `git add src/libs/schemas/order-status-event/order-status-event-1.0.3.json`
+2. **Try to commit**: `git commit -m "Update order status event"`
+3. **Hook runs and fails**:
+   ```
+   Ghost file 'src/libs/schemas/order-status-event/order-status-event.json.ghost' was created/updated and needs to be added to your commit.
+   Please run: git add src/libs/schemas/order-status-event/order-status-event.json.ghost
+   Then commit again.
+   ```
+4. **Add ghost file**: `git add src/libs/schemas/order-status-event/order-status-event.json.ghost`
+5. **Commit again**: `git commit -m "Update order status event"` ✅
+
+### Error Handling
+
+The hook will fail in these scenarios:
+
+1. **Missing ghost file**: When a versioned file is staged but has no ghost file
+2. **Out of sync ghost file**: When a ghost file exists but doesn't match the staged version
+3. **New ghost file created**: When the hook creates/updates a ghost file
+
+In all cases, the hook provides clear instructions on how to fix the issue.
 
 ## Example Output
 
