@@ -204,7 +204,7 @@ main() {
             log_error "  $ghost"
         done
         log_error ""
-        log_error "Please run: git add ${UPDATED_GHOSTS[*]}"
+        log_error "Please run: git add $(printf '%s ' "${UPDATED_GHOSTS[@]}")"
         log_error "Then commit again."
         exit 1
     fi
