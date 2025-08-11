@@ -64,130 +64,84 @@ extract_version() {
     echo "$version_part"
 }
 
-# Global array to collect all created/updated ghost files
-UPDATED_GHOSTS=()
-
-# Function to process a directory for ghost files
-process_directory_for_ghosts() {
-    local dir="$1"
-    local description="$2"
+# Function to check if a file is within the configured directories
+is_file_in_configured_dirs() {
+    local file="$1"
+    local dirs_string="$2"
     
-    log_info "Processing $description directory: $dir"
+    # Parse the colon-separated directories
+    IFS=':' read -ra CONFIGURED_DIRS <<< "$dirs_string"
     
-    # Find all subdirectories in this directory
-    local subdirs=$(find "$dir" -type d)
-    log_info "Found subdirectories: $subdirs"
-    
-    # Use process substitution to avoid subshell issues
-    while IFS= read -r subdir; do
-        # Skip the root directory itself
-        if [ "$subdir" = "$dir" ]; then
-            log_info "Skipping root directory: $subdir"
-            continue
-        fi
-        
-        log_info "Processing subdirectory: $subdir"
-        
-        # Look for files with version patterns in this subdirectory
-        log_info "Looking for versioned files in: $subdir"
-        local base_files=$(find "$subdir" -maxdepth 1 -type f -name "*-*.json" -o -name "*-*.ts" | head -1)
-        log_info "Found base files: $base_files"
-        
-        if [ -n "$base_files" ]; then
-            log_info "Processing versioned files in: $subdir"
-            # Get the base name without version and extension
-            local first_file=$(echo "$base_files" | head -n 1)
-            local filename=$(basename "$first_file")
-            local extension="${filename##*.}"
-            # Extract base name by removing version pattern and extension
-            local base_name=$(echo "$filename" | sed -E 's/-[0-9]+\.[0-9]+(\.[0-9]+)?\.[a-zA-Z]+$//')
-            log_info "Extracted base name: $base_name, extension: $extension"
-            
-            # Find the latest version
-            local latest_file=$(find_latest_version "$subdir" "$base_name" "$extension")
-            log_info "Latest version file: $latest_file"
-            
-            if [ -n "$latest_file" ]; then
-                local ghost_file="${subdir}/${base_name}.${extension}${GHOST_SUFFIX}"
-                local latest_version=$(extract_version "$(basename "$latest_file")" "$base_name" "$extension")
-                
-                # Check if ghost file exists and if the latest version has changed
-                local should_update=false
-                if [ ! -f "$ghost_file" ]; then
-                    should_update=true
-                    log_info "Ghost file does not exist, creating: $ghost_file"
-                else
-                    # Check if this is the first run by seeing if the ghost file is tracked in git
-                    if ! git ls-files --error-unmatch "$ghost_file" >/dev/null 2>&1; then
-                        # Ghost file exists but isn't tracked in git - this is likely a first run
-                        should_update=true
-                        log_info "Ghost file exists but not tracked in git, updating: $ghost_file"
-                    elif ! cmp -s "$latest_file" "$ghost_file"; then
-                        # Compare content to see if latest version has changed
-                        should_update=true
-                        log_info "Latest version has changed, updating ghost file: $ghost_file"
-                    else
-                        log_info "Ghost file is up to date: $ghost_file"
-                    fi
-                fi
-                
-                if [ "$should_update" = true ]; then
-                    log_info "Found latest version: $latest_file (v$latest_version)"
-                    log_info "Generating/updating ghost file: $ghost_file"
-                    
-                    # Copy the latest version to the ghost file
-                    cp "$latest_file" "$ghost_file"
-                    
-                    log_info "Ghost file created/updated: $ghost_file"
-                    
-                    # Add to the global collection instead of failing immediately
-                    UPDATED_GHOSTS+=("$ghost_file")
-                    log_info "Added to UPDATED_GHOSTS array. Current count: ${#UPDATED_GHOSTS[@]}"
-                fi
-            fi
-        fi
-    done < <(echo "$subdirs")
-}
-
-# Function to check if staged versioned files have ghost files
-check_staged_versioned_files() {
-    local missing_ghosts=()
-    
-    # Get all staged files
-    local staged_files=$(git diff --cached --name-only)
-    
-    for staged_file in $staged_files; do
-        # Check if this is a versioned file
-        if [[ "$staged_file" =~ -[0-9]+\.[0-9]+(\.[0-9]+)?\.[a-zA-Z]+$ ]]; then
-            # Extract base name and extension
-            local base_name=$(echo "$staged_file" | sed -E 's/-[0-9]+\.[0-9]+(\.[0-9]+)?\.[a-zA-Z]+$//')
-            local extension=$(echo "$staged_file" | sed -E 's/.*\.([a-zA-Z]+)$/\1/')
-            local dir=$(dirname "$staged_file")
-            local ghost_file="${dir}/${base_name}.${extension}${GHOST_SUFFIX}"
-            
-            # Check if ghost file exists and is up to date
-            if [ ! -f "$ghost_file" ]; then
-                missing_ghosts+=("$ghost_file")
-            else
-                # Check if ghost file is out of sync with the staged version
-                local staged_content=$(git show ":$staged_file")
-                if ! echo "$staged_content" | cmp -s "$ghost_file" -; then
-                    missing_ghosts+=("$ghost_file (out of sync)")
-                fi
-            fi
+    for dir in "${CONFIGURED_DIRS[@]}"; do
+        if [[ "$file" == "$dir"/* ]]; then
+            return 0  # File is within this configured directory
         fi
     done
     
-    # If any ghost files are missing or out of sync, fail with helpful message
-    if [ ${#missing_ghosts[@]} -gt 0 ]; then
-        log_error "Error: The following ghost files are missing or out of sync for staged versioned files:"
-        for ghost in "${missing_ghosts[@]}"; do
-            log_error "  $ghost"
-        done
-        log_error ""
-        log_error "Please run: git add ${missing_ghosts[*]% (*}"
-        log_error "Then commit again."
-        exit 1
+    return 1  # File is not within any configured directory
+}
+
+# Global array to collect all created/updated ghost files
+UPDATED_GHOSTS=()
+
+# Function to process a single file for ghost file requirements
+process_file_for_ghost() {
+    local file="$1"
+    local configured_dirs="$2"
+    
+    # First check if this file is within the configured directories
+    if ! is_file_in_configured_dirs "$file" "$configured_dirs"; then
+        log_info "Skipping file outside configured directories: $file"
+        return 0
+    fi
+    
+    # Check if this is a versioned file
+    if [[ "$file" =~ -[0-9]+\.[0-9]+(\.[0-9]+)?\.[a-zA-Z]+$ ]]; then
+        log_info "Processing versioned file: $file"
+        
+        # Extract base name and extension
+        local base_name=$(echo "$file" | sed -E 's/-[0-9]+\.[0-9]+(\.[0-9]+)?\.[a-zA-Z]+$//')
+        local extension=$(echo "$file" | sed -E 's/.*\.([a-zA-Z]+)$/\1/')
+        local dir=$(dirname "$file")
+        local ghost_file="${dir}/${base_name}.${extension}${GHOST_SUFFIX}"
+        
+        log_info "Extracted base name: $base_name, extension: $extension"
+        log_info "Ghost file path: $ghost_file"
+        
+        # Check if ghost file exists and if it needs updating
+        local should_update=false
+        if [ ! -f "$ghost_file" ]; then
+            should_update=true
+            log_info "Ghost file does not exist, will create: $ghost_file"
+        else
+            # Check if this is the first run by seeing if the ghost file is tracked in git
+            if ! git ls-files --error-unmatch "$ghost_file" >/dev/null 2>&1; then
+                # Ghost file exists but isn't tracked in git - this is likely a first run
+                should_update=true
+                log_info "Ghost file exists but not tracked in git, will update: $ghost_file"
+            elif ! cmp -s "$file" "$ghost_file"; then
+                # Compare content to see if the file has changed
+                should_update=true
+                log_info "File content has changed, will update ghost file: $ghost_file"
+            else
+                log_info "Ghost file is up to date: $ghost_file"
+            fi
+        fi
+        
+        if [ "$should_update" = true ]; then
+            log_info "Will create/update ghost file from: $file"
+            
+            # Copy the file to the ghost file
+            cp "$file" "$ghost_file"
+            
+            log_info "Ghost file created/updated: $ghost_file"
+            
+            # Add to the global collection
+            UPDATED_GHOSTS+=("$ghost_file")
+            log_info "Added to UPDATED_GHOSTS array. Current count: ${#UPDATED_GHOSTS[@]}"
+        fi
+    else
+        log_info "Skipping non-versioned file: $file"
     fi
 }
 
@@ -195,49 +149,30 @@ check_staged_versioned_files() {
 main() {
     log_info "Starting ghost file generation for versioned files"
     
-    # Parse arguments - only take the first two, ignore any additional args from pre-commit
-    if [ $# -lt 2 ]; then
-        log_error "Usage: $0 <ghost_suffix> <directories>"
-        log_error "Example: $0 .ghost src/libs/schemas:src/workers"
+    # Parse arguments - first is ghost suffix, second is configured directories, rest are files to process
+    if [ $# -lt 3 ]; then
+        log_error "Usage: $0 <ghost_suffix> <configured_directories> <file1> [file2] [file3] ..."
+        log_error "Example: $0 .ghost src/libs/schemas:src/workers src/libs/schemas/order-status-event/order-status-event-1.0.0.json"
         exit 1
     fi
     
-    # First argument is the ghost suffix, second is the colon-separated directories
+    # First argument is the ghost suffix, second is the configured directories
     GHOST_SUFFIX="$1"
-    DIRS_STRING="$2"
+    CONFIGURED_DIRS="$2"
+    shift 2  # Remove the first two arguments (ghost suffix and configured directories)
     
     log_info "Ghost suffix: $GHOST_SUFFIX"
-    log_info "Directories to scan: $DIRS_STRING"
+    log_info "Configured directories: $CONFIGURED_DIRS"
+    log_info "Files to process: $*"
     
-    # Parse the colon-separated directories string and filter out any non-directory paths
-    IFS=':' read -ra DIRS <<< "$DIRS_STRING"
-    local valid_dirs=()
-    for dir in "${DIRS[@]}"; do
-        if [ -d "$dir" ]; then
-            valid_dirs+=("$dir")
-        else
-            log_warn "Skipping non-directory path: $dir"
-        fi
-    done
-    DIRS=("${valid_dirs[@]}")
-    
-    if [ ${#DIRS[@]} -eq 0 ]; then
-        log_error "No valid directories found to scan"
-        exit 1
-    fi
-    
-    # Process all directories to generate/update ghost files
-    for dir in "${DIRS[@]}"; do
-        if [ -n "$dir" ]; then
-            # Pass the updated_ghosts array to collect results
-            process_directory_for_ghosts "$dir" "versioned files"
+    # Process each file individually
+    for file in "$@"; do
+        if [ -n "$file" ]; then
+            process_file_for_ghost "$file" "$CONFIGURED_DIRS"
         fi
     done
     
-    log_info "Finished processing all directories. UPDATED_GHOSTS array contains ${#UPDATED_GHOSTS[@]} items: ${UPDATED_GHOSTS[*]}"
-    
-    # Now check if staged versioned files have ghost files
-    check_staged_versioned_files
+    log_info "Finished processing all files. UPDATED_GHOSTS array contains ${#UPDATED_GHOSTS[@]} items: ${UPDATED_GHOSTS[*]}"
     
     # If any ghost files were created/updated, fail with comprehensive message
     if [ ${#UPDATED_GHOSTS[@]} -gt 0 ]; then
