@@ -71,6 +71,6 @@
   name: Generate Ghost Files
   description: Generate ghost files for versioned files to show diffs in PRs
   entry: generate-ghost-files/generate-ghost-files.sh
-  language: system
+  language: script
   stages: [pre-commit]
   args: ['.ghost', 'src/libs/schemas:src/workers']
