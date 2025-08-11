@@ -110,8 +110,9 @@ process_file_for_ghost() {
         log_info "Processing versioned file: $file"
         
         # Extract base name and extension
-        local base_name=$(echo "$file" | sed -E 's/-[0-9]+\.[0-9]+(\.[0-9]+)?\.[a-zA-Z]+$//')
-        local extension=$(echo "$file" | sed -E 's/.*\.([a-zA-Z]+)$/\1/')
+        local filename=$(basename "$file")
+        local base_name=$(echo "$filename" | sed -E 's/-[0-9]+\.[0-9]+(\.[0-9]+)?\.[a-zA-Z]+$//')
+        local extension=$(echo "$filename" | sed -E 's/.*\.([a-zA-Z]+)$/\1/')
         
         echo "DEBUG: base_name extracted: '$base_name'" >&2
         echo "DEBUG: extension extracted: '$extension'" >&2
