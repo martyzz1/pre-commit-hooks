@@ -97,6 +97,8 @@ process_file_for_ghost() {
     local file="$1"
     local configured_dirs="$2"
     
+    echo "=== PROCESSING FILE: $file ===" >&2
+    
     # First check if this file is within the configured directories
     if ! is_file_in_configured_dirs "$file" "$configured_dirs"; then
         log_info "Skipping file outside configured directories: $file"
