@@ -97,7 +97,7 @@ process_file_for_ghost() {
     local file="$1"
     local configured_dirs="$2"
     
-    echo "=== PROCESSING FILE: $file ===" >&2
+    #echo "=== PROCESSING FILE: $file ===" >&2
     
     # First check if this file is within the configured directories
     if ! is_file_in_configured_dirs "$file" "$configured_dirs"; then
@@ -114,19 +114,12 @@ process_file_for_ghost() {
         local base_name=$(echo "$filename" | sed -E 's/-[0-9]+\.[0-9]+(\.[0-9]+)?\.[a-zA-Z]+$//')
         local extension=$(echo "$filename" | sed -E 's/.*\.([a-zA-Z]+)$/\1/')
         
-        echo "DEBUG: base_name extracted: '$base_name'" >&2
-        echo "DEBUG: extension extracted: '$extension'" >&2
-        
         # Get the directory and ensure it's a clean relative path
         local dir=$(dirname "$file")
         # Remove any leading ./ if present
         dir="${dir#./}"
         
-        echo "DEBUG: dirname returned: '$dir'" >&2
-        
         local ghost_file="${dir}/${base_name}.${extension}${GHOST_SUFFIX}"
-        
-        echo "DEBUG: ghost_file path: '$ghost_file'" >&2
         
         log_info "Extracted base name: $base_name, extension: $extension"
         log_info "Directory: $dir"
