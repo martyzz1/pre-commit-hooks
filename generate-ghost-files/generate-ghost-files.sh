@@ -23,6 +23,11 @@ DIRS_STRING="$2"
 # Split the directories string by colons
 IFS=':' DIRS=($DIRS_STRING)
 
+# Debug: Show what we received
+log_info "Received directories string: '$DIRS_STRING'"
+log_info "Parsed directories array: ${DIRS[*]}"
+log_info "Number of directories: ${#DIRS[@]}"
+
 # Colors for output
 RED='\033[0;31m'
 GREEN='\033[0;32m'
