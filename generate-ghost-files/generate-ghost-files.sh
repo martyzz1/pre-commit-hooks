@@ -95,14 +95,17 @@ generate_ghost_for_dir() {
         log_info "Found base files: $base_files"
         
         if [ -n "$base_files" ]; then
+            log_info "Processing versioned files in: $subdir"
             # Get the base name without version and extension
             local first_file=$(echo "$base_files" | head -n 1)
             local filename=$(basename "$first_file")
             local extension="${filename##*.}"
             local base_name=$(echo "$filename" | sed 's/-[0-9]\+\.[0-9]\+\.[0-9]\+//' | sed 's/-[0-9]\+\.[0-9]\+//')
+            log_info "Extracted base name: $base_name, extension: $extension"
             
             # Find the latest version
             local latest_file=$(find_latest_version "$subdir" "$base_name" "$extension")
+            log_info "Latest version file: $latest_file"
             
             if [ -n "$latest_file" ]; then
                 local ghost_file="${subdir}/${base_name}${GHOST_SUFFIX}"
