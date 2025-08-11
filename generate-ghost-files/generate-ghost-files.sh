@@ -77,11 +77,17 @@ generate_ghost_for_dir() {
     
     # Find all subdirectories that contain versioned files
     log_info "Searching for subdirectories in: $dir"
-    find "$dir" -type d | while read -r subdir; do
+    local subdirs=$(find "$dir" -type d)
+    log_info "Found subdirectories: $subdirs"
+    
+    echo "$subdirs" | while read -r subdir; do
         # Skip the root directory itself
         if [ "$subdir" = "$dir" ]; then
+            log_info "Skipping root directory: $subdir"
             continue
         fi
+        
+        log_info "Processing subdirectory: $subdir"
         
         # Look for files with version patterns in this subdirectory
         local base_files=$(find "$subdir" -maxdepth 1 -type f -name "*-*.json" -o -name "*-*.ts" | head -1)
