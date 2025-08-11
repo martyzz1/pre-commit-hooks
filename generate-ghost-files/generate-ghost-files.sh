@@ -144,11 +144,6 @@ process_file_for_ghost() {
         
         if [ "$should_update" = true ]; then
             log_info "Will create/update ghost file from: $file"
-            log_info "Source file exists: $([ -f "$file" ] && echo "YES" || echo "NO")"
-            log_info "Target directory exists: $([ -d "$dir" ] && echo "YES" || echo "NO")"
-            
-            # Ensure the target directory exists
-            mkdir -p "$dir"
             
             # Copy the file to the ghost file
             cp "$file" "$ghost_file"
@@ -190,20 +185,9 @@ main() {
     log_info "Configured directories: $CONFIGURED_DIRS"
     log_info "Files to process: $*"
     
-    # Debug: Print each file argument separately
-    echo "=== INCOMING FILES LIST ===" >&2
-    for i in $(seq 1 $#); do
-        echo "Arg $i: '${!i}'" >&2
-    done
-    echo "=== END INCOMING FILES LIST ===" >&2
-    
     # Process each file individually
     for file in "$@"; do
         if [ -n "$file" ]; then
-            log_info "Raw file path: '$file'"
-            log_info "File exists: $([ -f "$file" ] && echo "YES" || echo "NO")"
-            log_info "File is file: $([ -f "$file" ] && echo "YES" || echo "NO")"
-            log_info "File is directory: $([ -d "$file" ] && echo "YES" || echo "NO")"
             process_file_for_ghost "$file" "$CONFIGURED_DIRS"
         fi
     done
