@@ -29,9 +29,17 @@ GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 NC='\033[0m' # No Color
 
+# Global array to collect all created/updated ghost files
+UPDATED_GHOSTS=()
+
+# Verbose flag - set to true if --verbose is passed
+VERBOSE=false
+
 # Logging functions
 log_info() {
-    echo "[INFO] $1" >&2
+    if [ "$VERBOSE" = true ]; then
+        echo "[INFO] $1" >&2
+    fi
 }
 
 log_warn() {
@@ -147,6 +155,12 @@ process_file_for_ghost() {
 
 # Main execution
 main() {
+    # Check if pre-commit is running in verbose mode
+    if [ "$PRE_COMMIT_VERBOSE" = "1" ]; then
+        VERBOSE=true
+        log_info "Verbose mode enabled (detected from pre-commit)"
+    fi
+    
     log_info "Starting ghost file generation for versioned files"
     
     # Parse arguments - first is ghost suffix, second is configured directories, rest are files to process
