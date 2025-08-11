@@ -113,6 +113,9 @@ process_file_for_ghost() {
         local base_name=$(echo "$file" | sed -E 's/-[0-9]+\.[0-9]+(\.[0-9]+)?\.[a-zA-Z]+$//')
         local extension=$(echo "$file" | sed -E 's/.*\.([a-zA-Z]+)$/\1/')
         
+        echo "DEBUG: base_name extracted: '$base_name'" >&2
+        echo "DEBUG: extension extracted: '$extension'" >&2
+        
         # Get the directory and ensure it's a clean relative path
         local dir=$(dirname "$file")
         # Remove any leading ./ if present
