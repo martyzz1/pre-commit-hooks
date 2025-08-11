@@ -109,7 +109,7 @@ generate_ghost_for_dir() {
             log_info "Latest version file: $latest_file"
             
             if [ -n "$latest_file" ]; then
-                local ghost_file="${subdir}/${base_name}${GHOST_SUFFIX}"
+                local ghost_file="${subdir}/${base_name}.${extension}${GHOST_SUFFIX}"
                 local latest_version=$(extract_version "$(basename "$latest_file")" "$base_name" "$extension")
                 
                 # Check if ghost file exists and if the latest version has changed
