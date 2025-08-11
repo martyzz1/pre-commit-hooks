@@ -125,33 +125,43 @@ process_file_for_ghost() {
         log_info "Directory: $dir"
         log_info "Ghost file path: $ghost_file"
         
+        # Find the highest version of this file in the same directory
+        local highest_version_file=$(find_latest_version "$dir" "$base_name" "$extension")
+        
+        if [ -z "$highest_version_file" ]; then
+            log_warn "No versioned files found for base name: $base_name in directory: $dir"
+            return 0
+        fi
+        
+        log_info "Found highest version file: $highest_version_file"
+        
         # Check if ghost file exists and if it needs updating
         local should_update=false
         if [ ! -f "$ghost_file" ]; then
             should_update=true
-            log_info "Ghost file does not exist, will create: $ghost_file"
+            log_info "Ghost file does not exist, will create from highest version: $highest_version_file"
         else
             # Check if this is the first run by seeing if the ghost file is tracked in git
             if ! git ls-files --error-unmatch "$ghost_file" >/dev/null 2>&1; then
                 # Ghost file exists but isn't tracked in git - this is likely a first run
                 should_update=true
-                log_info "Ghost file exists but not tracked in git, will update: $ghost_file"
-            elif ! cmp -s "$file" "$ghost_file"; then
-                # Compare content to see if the file has changed
+                log_info "Ghost file exists but not tracked in git, will update from highest version: $highest_version_file"
+            elif ! cmp -s "$highest_version_file" "$ghost_file"; then
+                # Compare content to see if the highest version file has changed
                 should_update=true
-                log_info "File content has changed, will update ghost file: $ghost_file"
+                log_info "Highest version file content has changed, will update ghost file: $ghost_file"
             else
-                log_info "Ghost file is up to date: $ghost_file"
+                log_info "Ghost file is up to date with highest version: $ghost_file"
             fi
         fi
         
         if [ "$should_update" = true ]; then
-            log_info "Will create/update ghost file from: $file"
+            log_info "Will create/update ghost file from highest version: $highest_version_file"
             
-            # Copy the file to the ghost file
-            cp "$file" "$ghost_file"
+            # Copy the highest version file to the ghost file
+            cp "$highest_version_file" "$ghost_file"
             
-            log_info "Ghost file created/updated: $ghost_file"
+            log_info "Ghost file created/updated from highest version: $ghost_file"
             
             # Add to the global collection
             UPDATED_GHOSTS+=("$ghost_file")
