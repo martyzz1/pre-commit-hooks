@@ -228,7 +228,7 @@ main() {
     
     # If any ghost files were created/updated, fail with comprehensive message
     if [ ${#UPDATED_GHOSTS[@]} -gt 0 ]; then
-        log_error "The following ghost files were created/updated and need to be added to your commit:"
+        log_error "The following ghost files were modified and need to be added to your commit:"
         for ghost in "${UPDATED_GHOSTS[@]}"; do
             log_error "  $ghost"
         done
