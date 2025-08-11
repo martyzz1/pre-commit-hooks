@@ -118,7 +118,11 @@ process_file_for_ghost() {
         # Remove any leading ./ if present
         dir="${dir#./}"
         
+        echo "DEBUG: dirname returned: '$dir'" >&2
+        
         local ghost_file="${dir}/${base_name}.${extension}${GHOST_SUFFIX}"
+        
+        echo "DEBUG: ghost_file path: '$ghost_file'" >&2
         
         log_info "Extracted base name: $base_name, extension: $extension"
         log_info "Directory: $dir"
