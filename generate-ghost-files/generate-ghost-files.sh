@@ -114,6 +114,7 @@ process_file_for_ghost() {
         local ghost_file="${dir}/${base_name}.${extension}${GHOST_SUFFIX}"
         
         log_info "Extracted base name: $base_name, extension: $extension"
+        log_info "Directory: $dir"
         log_info "Ghost file path: $ghost_file"
         
         # Check if ghost file exists and if it needs updating
@@ -138,6 +139,8 @@ process_file_for_ghost() {
         
         if [ "$should_update" = true ]; then
             log_info "Will create/update ghost file from: $file"
+            log_info "Source file exists: $([ -f "$file" ] && echo "YES" || echo "NO")"
+            log_info "Target directory exists: $([ -d "$dir" ] && echo "YES" || echo "NO")"
             
             # Copy the file to the ghost file
             cp "$file" "$ghost_file"
