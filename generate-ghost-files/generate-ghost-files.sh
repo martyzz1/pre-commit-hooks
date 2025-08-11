@@ -77,15 +77,34 @@ is_file_in_configured_dirs() {
     local file="$1"
     local dirs_string="$2"
     
-    # Parse the colon-separated directories
-    IFS=':' read -ra CONFIGURED_DIRS <<< "$dirs_string"
+    # Parse the colon-separated directories using a more reliable method
+    local IFS=':'
+    local -a CONFIGURED_DIRS=($dirs_string)
+    
+    log_info "Parsing configured directories from: '$dirs_string'"
+    log_info "Parsed directories: ${CONFIGURED_DIRS[*]}"
+    log_info "Checking if file '$file' is within any configured directory"
     
     for dir in "${CONFIGURED_DIRS[@]}"; do
+        # Skip empty entries
+        if [[ -z "$dir" ]]; then
+            log_info "Skipping empty directory entry"
+            continue
+        fi
+        
+        # Remove leading/trailing whitespace
+        dir=$(echo "$dir" | xargs)
+        log_info "Checking directory: '$dir'"
+        
         if [[ "$file" == "$dir"/* ]]; then
+            log_info "File '$file' is within configured directory '$dir'"
             return 0  # File is within this configured directory
+        else
+            log_info "File '$file' is NOT within configured directory '$dir'"
         fi
     done
     
+    log_info "File '$file' is not within any configured directory"
     return 1  # File is not within any configured directory
 }
 
