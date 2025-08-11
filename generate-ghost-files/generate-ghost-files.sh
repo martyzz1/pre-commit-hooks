@@ -64,11 +64,13 @@ extract_version() {
     echo "$version_part"
 }
 
+# Global array to collect all created/updated ghost files
+UPDATED_GHOSTS=()
+
 # Function to process a directory for ghost files
 process_directory_for_ghosts() {
     local dir="$1"
     local description="$2"
-    local -n updated_ghosts_ref="$3"  # Reference to the array to collect results
     
     log_info "Processing $description directory: $dir"
     
@@ -137,8 +139,8 @@ process_directory_for_ghosts() {
                     
                     log_info "Ghost file created/updated: $ghost_file"
                     
-                    # Add to the collection instead of failing immediately
-                    updated_ghosts_ref+=("$ghost_file")
+                    # Add to the global collection instead of failing immediately
+                    UPDATED_GHOSTS+=("$ghost_file")
                 fi
             fi
         fi
@@ -222,14 +224,11 @@ main() {
         exit 1
     fi
     
-    # Array to collect all created/updated ghost files
-    local updated_ghosts=()
-    
     # Process all directories to generate/update ghost files
     for dir in "${DIRS[@]}"; do
         if [ -n "$dir" ]; then
             # Pass the updated_ghosts array to collect results
-            process_directory_for_ghosts "$dir" "versioned files" updated_ghosts
+            process_directory_for_ghosts "$dir" "versioned files"
         fi
     done
     
@@ -237,13 +236,13 @@ main() {
     check_staged_versioned_files
     
     # If any ghost files were created/updated, fail with comprehensive message
-    if [ ${#updated_ghosts[@]} -gt 0 ]; then
+    if [ ${#UPDATED_GHOSTS[@]} -gt 0 ]; then
         log_error "The following ghost files were created/updated and need to be added to your commit:"
-        for ghost in "${updated_ghosts[@]}"; do
+        for ghost in "${UPDATED_GHOSTS[@]}"; do
             log_error "  $ghost"
         done
         log_error ""
-        log_error "Please run: git add ${updated_ghosts[*]}"
+        log_error "Please run: git add ${UPDATED_GHOSTS[*]}"
         log_error "Then commit again."
         exit 1
     fi
