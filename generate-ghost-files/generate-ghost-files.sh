@@ -110,7 +110,12 @@ process_file_for_ghost() {
         # Extract base name and extension
         local base_name=$(echo "$file" | sed -E 's/-[0-9]+\.[0-9]+(\.[0-9]+)?\.[a-zA-Z]+$//')
         local extension=$(echo "$file" | sed -E 's/.*\.([a-zA-Z]+)$/\1/')
+        
+        # Get the directory and ensure it's a clean relative path
         local dir=$(dirname "$file")
+        # Remove any leading ./ if present
+        dir="${dir#./}"
+        
         local ghost_file="${dir}/${base_name}.${extension}${GHOST_SUFFIX}"
         
         log_info "Extracted base name: $base_name, extension: $extension"
@@ -141,6 +146,9 @@ process_file_for_ghost() {
             log_info "Will create/update ghost file from: $file"
             log_info "Source file exists: $([ -f "$file" ] && echo "YES" || echo "NO")"
             log_info "Target directory exists: $([ -d "$dir" ] && echo "YES" || echo "NO")"
+            
+            # Ensure the target directory exists
+            mkdir -p "$dir"
             
             # Copy the file to the ghost file
             cp "$file" "$ghost_file"
@@ -182,9 +190,20 @@ main() {
     log_info "Configured directories: $CONFIGURED_DIRS"
     log_info "Files to process: $*"
     
+    # Debug: Print each file argument separately
+    echo "=== INCOMING FILES LIST ===" >&2
+    for i in $(seq 1 $#); do
+        echo "Arg $i: '${!i}'" >&2
+    done
+    echo "=== END INCOMING FILES LIST ===" >&2
+    
     # Process each file individually
     for file in "$@"; do
         if [ -n "$file" ]; then
+            log_info "Raw file path: '$file'"
+            log_info "File exists: $([ -f "$file" ] && echo "YES" || echo "NO")"
+            log_info "File is file: $([ -f "$file" ] && echo "YES" || echo "NO")"
+            log_info "File is directory: $([ -d "$file" ] && echo "YES" || echo "NO")"
             process_file_for_ghost "$file" "$CONFIGURED_DIRS"
         fi
     done
