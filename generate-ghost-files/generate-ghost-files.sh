@@ -9,17 +9,19 @@ set -e
 # First argument is the ghost file suffix
 GHOST_SUFFIX="${1:-.ghost}"
 
-# All remaining arguments are treated as directories to scan
+# Configuration: ghost suffix and colon-separated directories
 if [ $# -lt 2 ]; then
-    log_error "Usage: $0 <ghost_suffix> <directory1> [directory2] [directory3] ..."
-    log_error "Example: $0 .ghost src/libs/schemas src/workers"
+    log_error "Usage: $0 <ghost_suffix> <colon_separated_directories>"
+    log_error "Example: $0 .ghost src/libs/schemas:src/workers"
     exit 1
 fi
 
-# First argument is the ghost suffix, remaining are directories
+# First argument is the ghost suffix, second is colon-separated directories
 GHOST_SUFFIX="$1"
-shift  # Remove the first argument (ghost suffix)
-DIRS=("$@")
+DIRS_STRING="$2"
+
+# Split the directories string by colons
+IFS=':' read -ra DIRS <<< "$DIRS_STRING"
 
 # Colors for output
 RED='\033[0;31m'

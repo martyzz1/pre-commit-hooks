@@ -115,8 +115,8 @@ echo -e "${GREEN}Running the generate-ghost-files hook...${NC}"
 echo -e "${BLUE}Note: This will create ghost files and stage them in git${NC}"
 
 # Run the hook (assuming it's in the parent directory)
-# First argument: ghost suffix, then directories to scan
-../generate-ghost-files.sh ".ghost" "src/libs/schemas" "src/workers"
+# First argument: ghost suffix, second: colon-separated directories
+../generate-ghost-files.sh ".ghost" "src/libs/schemas:src/workers"
 
 echo -e "${GREEN}Checking what files were created and staged...${NC}"
 echo -e "${BLUE}Git status:${NC}"
