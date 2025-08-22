@@ -77,6 +77,6 @@
 - id: spelling-sort
   name: Sort spelling doc
   description: Sort mdspell spelling file
-  entry: LC_ALL=en_GB_POSIX  sort -u --ignore-case .spelling -o .spelling
+  entry: LC_ALL=en_GB_POSIX /usr/bin/sort -u --ignore-case .spelling -o .spelling
   language: script
   pass_filenames: false
