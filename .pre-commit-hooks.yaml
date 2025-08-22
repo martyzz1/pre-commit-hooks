@@ -74,3 +74,9 @@
   language: script
   stages: [pre-commit]
   args: ['.ghost', 'src/libs/schemas:src/workers']
+- id: spelling-sort
+  name: Sort spelling doc
+  description: Sort mdspell spelling file
+  entry: LC_ALL=en_GB_POSIX  sort -u --ignore-case .spelling -o .spelling
+  language: script
+  pass_filenames: false
