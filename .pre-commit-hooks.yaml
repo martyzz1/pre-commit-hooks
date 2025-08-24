@@ -74,9 +74,10 @@
   language: script
   stages: [pre-commit]
   args: ['.ghost', 'src/libs/schemas:src/workers']
-- id: spelling-sort
-  name: Sort spelling doc
-  description: Sort mdspell spelling file
-  entry: LC_ALL=en_GB_POSIX /usr/bin/sort -u --ignore-case .spelling -o .spelling
+- id: sort-insensitive
+  name: Sort files using case sort-insensitive
+  description: Sort files case insensitively
+  entry: sort-insensitive/sort-insensitive.sh
   language: script
-  pass_filenames: false
+  stages: [pre-commit]
+  pass_filenames: true
