@@ -77,7 +77,7 @@
 - id: sort-insensitive
   name: Sort files using case sort-insensitive
   description: Sort files case insensitively
-  entry: sort-insensitive/sort-insensitive.sh
+  entry: sort-insensitive/sort-case-insensitive.sh
   language: script
   stages: [pre-commit]
   pass_filenames: true
