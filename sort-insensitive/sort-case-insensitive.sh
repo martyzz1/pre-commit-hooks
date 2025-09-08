@@ -1,14 +1,23 @@
 #!/usr/bin/env bash
 
-# Pre-commit hook to generate ghost files for versioned files
-# This ensures that pull requests show diffs between versions
+# Pre-commit hook to sort files case-insensitively
+# Works on both macOS (GNU sort) and Linux (BusyBox sort)
 
 set -e
+
+# Detect sort implementation and set appropriate flags
+if /usr/bin/sort --version >/dev/null 2>&1; then
+    # GNU sort (macOS, most Linux distributions)
+    SORT_FLAGS="-u --ignore-case"
+else
+    # BusyBox sort (Alpine Linux)
+    SORT_FLAGS="-u -f"
+fi
 
 # Process each file individually
 for file in "$@"; do
   if [ -n "$file" ]; then
-      LC_ALL=en_GB_POSIX /usr/bin/sort -u --ignore-case "$file" -o "$file"
+      LC_ALL=en_GB_POSIX /usr/bin/sort $SORT_FLAGS "$file" -o "$file"
   fi
 done
 
