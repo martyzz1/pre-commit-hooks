@@ -7,7 +7,13 @@ if [ -z "$BRANCHES_TO_SKIP" ]; then
 fi
 
 BRANCH_NAME=$(git symbolic-ref --short HEAD)
-BRANCH_NAME="${BRANCH_NAME#*/}"
+# Keep the full branch name (including the prefix) for release, hotfix and stagingfix
+# branches so production, hotfix and stagingfix commits are unambiguous about their source.
+# For every other branch strip the leading segment (e.g. feature/eng-123-foo -> eng-123-foo).
+case "$BRANCH_NAME" in
+  release/* | hotfix/* | stagingfix/*) ;;
+  *) BRANCH_NAME="${BRANCH_NAME#*/}" ;;
+esac
 
 BRANCH_EXCLUDED=$(printf "%s\n" "${BRANCHES_TO_SKIP[@]}" | grep -c "^$BRANCH_NAME$")
 BRANCH_IN_COMMIT=$(grep -c "\[$BRANCH_NAME\]" "$1")
